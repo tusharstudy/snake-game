@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake.io</title>
+    <style>
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        canvas {
+            background: #202020;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Snake.io</h1>
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <p>Use arrow keys to move. Press R to restart after game over.</p>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const BLOCK_SIZE = 20;
+        const WIDTH = 600;
+        const HEIGHT = 400;
+        let snake = [{ x: WIDTH / 2, y: HEIGHT / 2 }];
+        let direction = { x: BLOCK_SIZE, y: 0 };
+        let food = { x: Math.floor(Math.random() * (WIDTH / BLOCK_SIZE)) * BLOCK_SIZE, y: Math.floor(Math.random() * (HEIGHT / BLOCK_SIZE)) * BLOCK_SIZE };
+        let speed = 5;
+        let pulse = 0;
+        let gameOver = false;
+
+        function drawSnake() {
+            snake.forEach((segment, i) => {
+                ctx.fillStyle = `rgb(${255 - i * 3}, ${180 + i * 2}, 50)`;
+                ctx.beginPath();
+                ctx.arc(segment.x + BLOCK_SIZE / 2, segment.y + BLOCK_SIZE / 2, BLOCK_SIZE / 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            const head = snake[0];
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(head.x + 6, head.y + 6, 5, 0, Math.PI * 2);
+            ctx.arc(head.x + 14, head.y + 6, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(head.x + 6, head.y + 6, 2, 0, Math.PI * 2);
+            ctx.arc(head.x + 14, head.y + 6, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(head.x + 10, head.y + 12, 5, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function drawFood() {
+            pulse = (pulse + 1) % 30;
+            const size = BLOCK_SIZE + (pulse / 10);
+            ctx.fillStyle = '#ff3232';
+            ctx.beginPath();
+            ctx.ellipse(food.x + BLOCK_SIZE / 2, food.y + BLOCK_SIZE / 2, size / 2, size / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function showMessage(msg) {
+            ctx.fillStyle = '#202020';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            ctx.fillStyle = '#fff';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(msg, WIDTH / 2, HEIGHT / 2 - 20);
+            ctx.fillText('Press R to Restart', WIDTH / 2, HEIGHT / 2 + 20);
+            gameOver = true;
+        }
+
+        function gameLoop() {
+            if (gameOver) return;
+
+            ctx.fillStyle = '#202020';
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+            head.x = (head.x + WIDTH) % WIDTH;
+            head.y = (head.y + HEIGHT) % HEIGHT;
+
+            if (snake.some(s => s.x === head.x && s.y === head.y)) {
+                showMessage('💀 Game Over!');
+                return;
+            }
+
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                food = { x: Math.floor(Math.random() * (WIDTH / BLOCK_SIZE)) * BLOCK_SIZE, y: Math.floor(Math.random() * (HEIGHT / BLOCK_SIZE)) * BLOCK_SIZE };
+                speed += 0.2;
+            } else {
+                snake.pop();
+            }
+
+            drawSnake();
+            drawFood();
+            setTimeout(gameLoop, 1000 / speed);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' && direction.y !== BLOCK_SIZE) direction = { x: 0, y: -BLOCK_SIZE };
+            else if (e.key === 'ArrowDown' && direction.y !== -BLOCK_SIZE) direction = { x: 0, y: BLOCK_SIZE };
+            else if (e.key === 'ArrowLeft' && direction.x !== BLOCK_SIZE) direction = { x: -BLOCK_SIZE, y: 0 };
+            else if (e.key === 'ArrowRight' && direction.x !== -BLOCK_SIZE) direction = { x: BLOCK_SIZE, y: 0 };
+            else if (e.key === 'r' && gameOver) {
+                snake = [{ x: WIDTH / 2, y: HEIGHT / 2 }];
+                direction = { x: BLOCK_SIZE, y: 0 };
+                food = { x: Math.floor(Math.random() * (WIDTH / BLOCK_SIZE)) * BLOCK_SIZE, y: Math.floor(Math.random() * (HEIGHT / BLOCK_SIZE)) * BLOCK_SIZE };
+                speed = 5;
+                gameOver = false;
+                gameLoop();
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
